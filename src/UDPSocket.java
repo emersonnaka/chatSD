@@ -8,30 +8,16 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.util.Scanner;
 
 public class UDPSocket {
 	
-	String host;
-	int serverPort;
+	private final String host;
+	private final int serverPort;
 	
-	public UDPSocket(String host, int serverPort) throws InterruptedException {
+	public UDPSocket(String host) throws InterruptedException {
 		
 		this.host = host;
-		this.serverPort = serverPort;
-		
-		Runnable clientRunnable = new Runnable() {
-			public void run() {
-				try {
-					UDPClient();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		};
-		Thread clientThread = new Thread(clientRunnable);
-		clientThread.start();
+		this.serverPort = 6799;
 		
 		Runnable serverRunnable = new Runnable() {
 			public void run() {
@@ -46,50 +32,37 @@ public class UDPSocket {
 		Thread serverThread = new Thread(serverRunnable);
 		serverThread.start();
 		
-		clientThread.join();
 		serverThread.join();
 	}
 	
-	public void UDPClient() throws IOException {
+	public void UDPClient(String message) throws IOException {
 		
 		DatagramSocket clientSocket = null;
-		Scanner scanner = new Scanner(System.in);
-		String nickname = new String();
 		String nicknameReceived;
-		String msgClient = new String();
 		String msgReceived = new String();
 		byte mClient[];
-		
-		System.out.print("Nickname: ");
-		nickname = scanner.nextLine();
-		
-		while(!(msgReceived.equalsIgnoreCase("Fim"))) {
-			clientSocket = new DatagramSocket();
-			msgClient = scanner.nextLine().trim();
-			
-			msgClient = nickname + "|||" + msgClient;
-			mClient = msgClient.getBytes();
-			
-			InetAddress aHost = InetAddress.getByName(this.host);
-			DatagramPacket request = new DatagramPacket(mClient, mClient.length, aHost, this.serverPort);
-			
-			clientSocket.send(request);
-			
-			byte[] buffer = new byte[1000];
-            DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
-            clientSocket.receive(reply);
 
-            String[] chunks = new String(reply.getData()).split("\\|\\|\\|");
-            nicknameReceived = chunks[0].trim();
-            msgReceived = chunks[1].trim();
-            System.out.println(nicknameReceived + ": " + msgReceived);
-            clientSocket.close();
-		}
-		System.out.println("Connection finished");
-		scanner.close();
+		clientSocket = new DatagramSocket();
+		
+		mClient = message.getBytes();
+		
+		InetAddress aHost = InetAddress.getByName(this.host);
+		DatagramPacket request = new DatagramPacket(mClient, mClient.length, aHost, this.serverPort);
+		
+		clientSocket.send(request);
+		
+		byte[] buffer = new byte[1000];
+        DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
+        clientSocket.receive(reply);
+
+        String[] chunks = new String(reply.getData()).split("\\|\\|\\|");
+        nicknameReceived = chunks[0].trim();
+        msgReceived = chunks[1].trim();
+        System.out.println(nicknameReceived + ": " + msgReceived);
+        clientSocket.close();
 	}
 	
-	public void UDPServer() throws IOException {
+	private void UDPServer() throws IOException {
 		
 		DatagramSocket serverSocket = new DatagramSocket(this.serverPort);
 		String msgServer = new String();
@@ -113,7 +86,7 @@ public class UDPSocket {
 		
 		if(args.length == 2) {
 			try {
-				new UDPSocket(args[0], Integer.parseInt(args[1]));
+				new UDPSocket(args[0]);
 			} catch (NumberFormatException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

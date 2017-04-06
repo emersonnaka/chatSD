@@ -10,36 +10,22 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.util.Map;
-import java.util.Scanner;
 
 public class Multicast {
 	
-	MulticastSocket mSocket = null;
-	String host;
-	int port;
-	InetAddress group;
-	Map<String, String> onlineMap;	
+	private final MulticastSocket mSocket;
+	private final String host;
+	private final int port;
+	private final InetAddress group;
+	private Map<String, String> onlineMap;	
 
-	public Multicast(String host, int port) throws IOException, InterruptedException {
+	public Multicast() throws IOException, InterruptedException {
 		
-		this.host = host;
-		this.port = port;
+		this.host = "225.1.2.3";
+		this.port = 6789;
 		this.group = InetAddress.getByName(this.host);
 		mSocket = new MulticastSocket(this.port);
 		mSocket.joinGroup(this.group);
-		
-		Runnable clientRun = new Runnable() {
-			@Override
-			public void run() {
-				try {
-					clientMulticast();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		};
-		Thread clientThread = new Thread(clientRun);
-		clientThread.start();
 		
 		Runnable serverRun = new Runnable() {
 			@Override
@@ -53,29 +39,12 @@ public class Multicast {
 		};
 		Thread serverThread = new Thread(serverRun);
 		serverThread.start();
-		
-		clientThread.join();
-		serverThread.join();
 	}
 	
-	private void clientMulticast() throws IOException {
-		
-		Scanner scanner = new Scanner(System.in);
-		String nickname = new String();
-		String msg = new String();
-		
-		System.out.print("Input your nickname: ");
-		nickname = scanner.nextLine();
-		
-		while(!msg.equalsIgnoreCase("Fim")) {
-			msg = new String(scanner.nextLine());
-			msg = nickname + "|||" + msg;
-			byte[] msgByte = msg.getBytes();
-			DatagramPacket msgDataOut = new DatagramPacket(msgByte,  msg.length(), this.group, this.port);
-			mSocket.send(msgDataOut);
-		}
-		
-		scanner.close();
+	private void clientMulticast(String message) throws IOException {
+		byte[] msgByte = message.getBytes();
+		DatagramPacket msgDataOut = new DatagramPacket(msgByte,  message.length(), this.group, this.port);
+		mSocket.send(msgDataOut);
 	}
 	
 	private void serverMulticast() throws IOException {
@@ -96,10 +65,6 @@ public class Multicast {
 	}
 	
 	public static void main(String args[]) throws NumberFormatException, IOException, InterruptedException {
-		if(args.length == 2) {
-			new Multicast(args[0], Integer.parseInt(args[1]));
-		} else {
-			System.out.println("Insert in command line: \"java Multicast ip port\" ");
-		}
+		new Multicast();
 	}
 }
