@@ -12,44 +12,46 @@ public class chatSD {
 	public chatSD() throws IOException, InterruptedException {
 		
 		scanner = new Scanner(System.in);
-		multicastChat = new Multicast();
 		
 		System.out.print("Choose your nickname: ");
 		nickname = new String(scanner.nextLine()).trim();
 		
-		System.out.println("--JOIN [" + nickname + "]");
+		multicastChat = new Multicast(nickname);		
 		multicastChat.sendMessage("--JOIN [" + nickname + "]");
-		System.out.println("You are connected.");
 		
 		message = new String();
 		command = new String();
+		String nicknameSend = new String();
 		
-		while(!message.equalsIgnoreCase("--LEAVE")) {
+		while(!command.equalsIgnoreCase("--LEAVE")) {
 			message = scanner.nextLine();
-			command = message.split(" ")[0];
+			command = message.split(" ")[0].trim();
+			nicknameSend = message.split(" ")[1].trim();
 			
-			if(command.equalsIgnoreCase("--JOINACK")) {
-				System.out.println("JOINACK");
-			} else if(command.equalsIgnoreCase("--JOIN")) {
-				System.out.println("--JOIN");
-			} else if(command.equalsIgnoreCase("--MSG")) {
-				System.out.println("--MSG");
-			} else if(command.equalsIgnoreCase("--MSGDIV")) {
+			if(command.equalsIgnoreCase("--MSGDIV")) {
 				System.out.println("--MSGDIV");
-			} else if(command.equalsIgnoreCase("--LISTFILES")) {
-				System.out.println("--LISTFILES");
-			} else if(command.equalsIgnoreCase("--FILES")) {
-				System.out.println("--FILES");
-			} else if(command.equalsIgnoreCase("--DOWNFILE")) {
-				System.out.println("--DOWNFILE");
-			} else if(command.equalsIgnoreCase("--DOWNINFO")) {
-				System.out.println("--DOWNINFO");
-			} else if(command.equalsIgnoreCase("--LEAVE")) {
-				System.out.println("--LEAVE");
+			} else if((nicknameSend.indexOf("[") == 0) && (nicknameSend.indexOf("]") == nicknameSend.length() - 1)) {
+				if(command.equalsIgnoreCase("--MSG")) {
+					multicastChat.sendMessage(message);
+				} else if(command.equalsIgnoreCase("--LISTFILES")) {
+					System.out.println("--LISTFILES");
+				} else if(command.equalsIgnoreCase("--FILES")) {
+					System.out.println("--FILES");
+				} else if(command.equalsIgnoreCase("--DOWNFILE")) {
+					System.out.println("--DOWNFILE");
+				} else if(command.equalsIgnoreCase("--DOWNINFO")) {
+					System.out.println("--DOWNINFO");
+				} else if(command.equalsIgnoreCase("--LEAVE")) {
+					multicastChat.sendMessage("--LEAVE" + " [" + this.nickname + "]");
+				} else {
+					System.out.println("Os colchetes são obrigatórios.");
+					printHelp();
+				}
 			} else {
 				printHelp();
 			}
 		}
+		System.out.println("Conexão finalizada");
 	}
 	
 	private void printHelp() {
