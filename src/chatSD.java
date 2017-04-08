@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.util.Scanner;
 
 public class chatSD {
@@ -6,13 +7,20 @@ public class chatSD {
 	private String message;
 	private String command;
 	private final Scanner scanner;
+	private final Multicast multicastChat;
 	
-	public chatSD() {
+	public chatSD() throws IOException, InterruptedException {
 		
 		scanner = new Scanner(System.in);
+		multicastChat = new Multicast();
 		
 		System.out.print("Choose your nickname: ");
-		nickname = new String(scanner.nextLine());
+		nickname = new String(scanner.nextLine()).trim();
+		
+		System.out.println("--JOIN [" + nickname + "]");
+		multicastChat.sendMessage("--JOIN [" + nickname + "]");
+		System.out.println("You are connected.");
+		
 		message = new String();
 		command = new String();
 		
@@ -46,8 +54,6 @@ public class chatSD {
 	
 	private void printHelp() {
 		System.out.println("Commands:");
-		System.out.println("--JOIN [apelido] \t\t Junta-se ao grupo de conversação");
-		System.out.println("--JOINACK [apelido] \t\t Resposta ao JOIN para possibilitar a manutenção da lista de usuários ativos");
 		System.out.println("--MSG [apelido] texto \t\t Mensagem enviada a todos os membros do grupo pelo IP 225.1.2.3 e porta 6789");
 		System.out.println("--MSGIDV FROM [apelido] TO [apelido] texto \t\t Mensagem enviada a um membro do grupo para ser recebida na porta 6799");
 		System.out.println("--LISTFILES [apelido] \t\t Solicitação de listagem de arquivos para um usuário");
@@ -57,7 +63,7 @@ public class chatSD {
 		System.out.println("--LEAVE [apelido] \t\t Deixa o grupo de conversação");
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException, InterruptedException {
 		new chatSD();
 	}
 

@@ -56,12 +56,25 @@ public class Multicast {
 			DatagramPacket msgDataIn = new DatagramPacket(msgByte, msgByte.length);
 			mSocket.receive(msgDataIn);
 			msg = new String(msgDataIn.getData());
+			
+			if(msg.contains("--JOIN")) {
+				nickname = msg.split(" ")[1];
+				nickname = nickname.substring(1, nickname.length() - 1);
+				
+				onlineMap.put(nickname, msgDataIn.getAddress().getHostAddress());
+				sendMessage("--JOINACK [" + nickname + "]");
+			}
+			
 			nickname = msg.split("\\|\\|\\|")[0].trim();
 			msg = msg.split("\\|\\|\\|")[1].trim();
 			
 			System.out.println(nickname + ": " + msg);
 		}
 		
+	}
+	
+	public void sendMessage(String message) throws IOException {
+		clientMulticast(message);
 	}
 	
 	public static void main(String args[]) throws NumberFormatException, IOException, InterruptedException {
