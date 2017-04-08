@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
-import java.util.Map;
+import java.util.HashMap;
 
 public class Multicast {
 	
@@ -17,7 +17,7 @@ public class Multicast {
 	private final String host;
 	private final int port;
 	private final InetAddress group;
-	private Map<String, String> onlineMap;	
+	private HashMap<String, String> onlineMap;	
 
 	public Multicast() throws IOException, InterruptedException {
 		
@@ -26,6 +26,7 @@ public class Multicast {
 		this.group = InetAddress.getByName(this.host);
 		mSocket = new MulticastSocket(this.port);
 		mSocket.joinGroup(this.group);
+		this.onlineMap = new HashMap<>();
 		
 		Runnable serverRun = new Runnable() {
 			@Override
@@ -63,12 +64,8 @@ public class Multicast {
 				
 				onlineMap.put(nickname, msgDataIn.getAddress().getHostAddress());
 				sendMessage("--JOINACK [" + nickname + "]");
-			}
-			
-			nickname = msg.split("\\|\\|\\|")[0].trim();
-			msg = msg.split("\\|\\|\\|")[1].trim();
-			
-			System.out.println(nickname + ": " + msg);
+			} else
+				System.out.println(nickname + ": " + msg);
 		}
 		
 	}
