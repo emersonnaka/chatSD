@@ -11,12 +11,10 @@ import java.net.InetAddress;
 
 public class UDPSocket {
 	
-	private final String host;
 	private final int serverPort;
 	
-	public UDPSocket(String host) throws InterruptedException {
+	public UDPSocket() throws InterruptedException {
 		
-		this.host = host;
 		this.serverPort = 6799;
 		
 		Runnable serverRunnable = new Runnable() {
@@ -31,11 +29,9 @@ public class UDPSocket {
 		};
 		Thread serverThread = new Thread(serverRunnable);
 		serverThread.start();
-		
-		serverThread.join();
 	}
 	
-	public void UDPClient(String message) throws IOException {
+	public void UDPClient(String host, String message) throws IOException {
 		
 		DatagramSocket clientSocket = null;
 		String nicknameReceived;
@@ -46,59 +42,35 @@ public class UDPSocket {
 		
 		mClient = message.getBytes();
 		
-		InetAddress aHost = InetAddress.getByName(this.host);
+		InetAddress aHost = InetAddress.getByName(host);
 		DatagramPacket request = new DatagramPacket(mClient, mClient.length, aHost, this.serverPort);
 		
 		clientSocket.send(request);
 		
-		byte[] buffer = new byte[1000];
-        DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
-        clientSocket.receive(reply);
-
-        String[] chunks = new String(reply.getData()).split("\\|\\|\\|");
-        nicknameReceived = chunks[0].trim();
-        msgReceived = chunks[1].trim();
-        System.out.println(nicknameReceived + ": " + msgReceived);
         clientSocket.close();
 	}
 	
 	private void UDPServer() throws IOException {
 		
 		DatagramSocket serverSocket = new DatagramSocket(this.serverPort);
-		String msgServer = new String();
-		while(!msgServer.equalsIgnoreCase("Fim")) {
+		String nicknameReceived = new String();
+		String message = new String();
+		
+		while(true) {
 			byte[] buffer = new byte[1000];
 			DatagramPacket request = new DatagramPacket(buffer, buffer.length);
 			serverSocket.receive(request);
 			
-			String[] chunks = new String(request.getData()).split("\\|\\|\\|");
-			msgServer = chunks[1].trim();
-			System.out.println(chunks[0] + ": " + chunks[1]);
+			String[] chunks = new String(request.getData()).split(" ");
+			nicknameReceived = chunks[2].trim().substring(1, chunks[2].trim().length() - 1);
+			message = chunks[5].trim().substring(1, chunks[5].trim().length() - 1);
 			
-			DatagramPacket reply = new DatagramPacket(request.getData(), request.getLength(), request.getAddress(), request.getPort()); // cria um pacote com os dados
-			serverSocket.send(reply);
+			System.out.println(nicknameReceived + ": " + message);
 		}
-		serverSocket.close();
-		System.out.println("Server disconnected");
 	}
-	
-	public static void main (String args[]) {
-		
-		if(args.length == 2) {
-			try {
-				new UDPSocket(args[0]);
-			} catch (NumberFormatException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		} else {
-			System.out.println("Insira por linha de comando: ip_destino número_porta");
-		}
 
+	public void sendMessage(String host, String message) throws IOException {
+		UDPClient(host, message);
 	}
-	
 	
 }

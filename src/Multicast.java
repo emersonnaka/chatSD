@@ -90,5 +90,9 @@ public class Multicast {
 	public void sendMessage(String message) throws IOException {
 		clientMulticast(message);
 	}
+
+	public HashMap<String, String> getOnlineMap() {
+		return onlineMap;
+	}
 	
 }
