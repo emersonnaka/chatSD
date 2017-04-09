@@ -35,10 +35,8 @@ public class chatSD {
 				if(verifyNickname(nicknameSend) && verifyNickname(nicknameSendTo)) {
 					System.out.println("Nickanames aprovador");
 					if(multicastChat.getOnlineMap().containsKey(nicknameSendTo.substring(1, nicknameSendTo.length() - 1))) {
-						System.out.println("Tá na hash");
-						String host = (String) multicastChat.getOnlineMap().get(nicknameSendTo);
-						System.out.println(host);
-//						udpChat.sendMessage(host, message);
+						String host = (String) multicastChat.getOnlineMap().get(nicknameSendTo.substring(1, nicknameSendTo.length() - 1));
+						udpChat.sendMessage(host, message);
 					} else
 						System.out.println("O usuário " + nicknameSendTo + " não está conectado no grupo!");;
 				} else
