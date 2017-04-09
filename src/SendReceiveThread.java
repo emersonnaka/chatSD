@@ -7,6 +7,7 @@
  */
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Scanner;
@@ -17,71 +18,58 @@ public class SendReceiveThread {
 	DataInputStream in;
 	DataOutputStream out;
 	Socket sendReceiveSocket;
-	Scanner scanner;
-	String sendedMsg;
 	String receivedMsg;
-	boolean connectionCompleted;
 	
 	public SendReceiveThread (Socket connection) throws IOException, InterruptedException {
 		sendReceiveSocket = connection;
 		in = new DataInputStream(sendReceiveSocket.getInputStream());
 		out = new DataOutputStream(sendReceiveSocket.getOutputStream());
-		scanner = new Scanner (System.in);
-		sendedMsg = new String();
 		receivedMsg = new String();
-		connectionCompleted = false;
 		
-		Runnable receiveRunnable = new Runnable(){
-			public void run(){
-				try {
-					receiveThread();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		};
-		Thread receiveThread = new Thread(receiveRunnable);
-		receiveThread.start();
-		
-		Runnable sendRunnable = new Runnable() {
-			public void run() {
-				try {
-					sendThread();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		};
-		Thread sendThread = new Thread(sendRunnable);
-		sendThread.start();
-		
-		receiveThread.join();
-		System.out.println("Receive thread is dead");
-		sendThread.join();
-		System.out.println("Send thread is dead");
+		receive();
 		in.close();
 		out.close();
-		sendReceiveSocket.close();
-		System.out.println("Connection is closed");
 	}
 	
-	public void receiveThread() throws IOException {
-		while(!(receivedMsg = in.readUTF()).equalsIgnoreCase("Fim") && !(connectionCompleted))
-			System.out.println("Received: " + receivedMsg);
+	public SendReceiveThread (Socket connection, boolean isClient, String message) throws IOException, InterruptedException {
+		sendReceiveSocket = connection;
+		in = new DataInputStream(sendReceiveSocket.getInputStream());
+		out = new DataOutputStream(sendReceiveSocket.getOutputStream());
+		receivedMsg = new String();
 		
-		System.out.println("Received: " + receivedMsg);
+		sendThread(message);
+		receive();
 		
-		if(!connectionCompleted)
-			connectionCompleted = true;
+		in.close();
+		out.close();
 	}
 	
-	public void sendThread() throws IOException {
-		while(!(sendedMsg = scanner.nextLine()).equalsIgnoreCase("Fim") && !(connectionCompleted))
-			out.writeUTF(sendedMsg);
+	private void receive() throws IOException {
+		receivedMsg = in.readUTF();
 		
-		out.writeUTF("Fim");
-		
-		if(!connectionCompleted)
-			connectionCompleted = true;
+		if(receivedMsg.contains("--LISTFILES")) {
+			String homePath = System.getProperty("user.home");
+			String pathShared = homePath + "/Imagens";
+			
+			File filesShared = new File(pathShared);
+
+			String files = new String();
+			files = "--FILES [";
+			
+			for(File file : filesShared.listFiles()) {
+				files = files + file.getName() + ", ";
+			}
+			files = files.substring(0, files.length() - 2) + "]";
+			
+			sendThread(files);
+		} else if(receivedMsg.contains("--FILES")) {
+			System.out.println(receivedMsg);
+		}
+	}
+	
+	private void sendThread(String message) throws IOException {
+		System.out.println(message);
+		out.writeUTF(message);
+		System.out.println("enviado");
 	}
 }

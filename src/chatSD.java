@@ -20,6 +20,7 @@ public class chatSD {
 		multicastChat.sendMessage("--JOIN [" + nickname + "]");
 		
 		udpChat = new UDPSocket();
+		new TCPServer();
 		
 		message = new String();
 		String nicknameSend = new String();
@@ -29,18 +30,17 @@ public class chatSD {
 			
 			if(message.contains("--MSGDIV FROM")) {
 				nicknameSend = message.split(" ")[2].trim();
-				System.out.println(nicknameSend);
 				String nicknameSendTo = message.split(" ")[4].trim();
-				System.out.println(nicknameSendTo);
+				
 				if(verifyNickname(nicknameSend) && verifyNickname(nicknameSendTo)) {
-					System.out.println("Nickanames aprovador");
 					if(multicastChat.getOnlineMap().containsKey(nicknameSendTo.substring(1, nicknameSendTo.length() - 1))) {
 						String host = (String) multicastChat.getOnlineMap().get(nicknameSendTo.substring(1, nicknameSendTo.length() - 1));
 						udpChat.sendMessage(host, message);
 					} else
-						System.out.println("O usuário " + nicknameSendTo + " não está conectado no grupo!");;
+						System.out.println("O usuário " + nicknameSendTo + " não está conectado no grupo!");
 				} else
 					System.out.println("É necessário que o apelido esteja entre colchetes!");
+				
 			} else if(message.contains("--MSG")) {
 				nicknameSend = message.split(" ")[1].trim();
 				if(verifyNickname(nicknameSend)) {
@@ -50,16 +50,24 @@ public class chatSD {
 						System.out.println("A mensagem deve ser escrita entre aspas duplas!");
 				} else
 					System.out.println("É necessário que o apelido esteja entre colchetes!");
+				
 			} else if(message.contains("--LISTFILES")) {
-				System.out.println("--LISTFILES");
-			} else if(message.contains("--FILES")) {
-				System.out.println("--FILES");
+				nicknameSend = message.split(" ")[1].trim();
+				if(verifyNickname(nicknameSend)) {
+					if(multicastChat.getOnlineMap().containsKey(nicknameSend.substring(1, nicknameSend.length() - 1))) {
+						String host = (String) multicastChat.getOnlineMap().get(nicknameSend.substring(1, nicknameSend.length() - 1));
+						new TCPClient(host, message);
+					} else
+						System.out.println("O usuário " + nicknameSend + " não está conectado no grupo!");
+				} else
+					System.out.println("É necessário que o apelido esteja entre colchetes!");
+				
 			} else if(message.contains("--DOWNFILE")) {
 				System.out.println("--DOWNFILE");
-			} else if(message.contains("--DOWNINFO")) {
-				System.out.println("--DOWNINFO");
+				
 			} else if(message.contains("--LEAVE")) {
 				multicastChat.sendMessage("--LEAVE" + " [" + this.nickname + "]");
+				
 			} else {
 				printHelp();
 			}

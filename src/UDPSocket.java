@@ -31,11 +31,9 @@ public class UDPSocket {
 		serverThread.start();
 	}
 	
-	public void UDPClient(String host, String message) throws IOException {
+	private void UDPClient(String host, String message) throws IOException {
 		
 		DatagramSocket clientSocket = null;
-		String nicknameReceived;
-		String msgReceived = new String();
 		byte mClient[];
 
 		clientSocket = new DatagramSocket();
@@ -63,7 +61,9 @@ public class UDPSocket {
 			
 			String[] chunks = new String(request.getData()).split(" ");
 			nicknameReceived = chunks[2].trim().substring(1, chunks[2].trim().length() - 1);
-			message = chunks[5].trim().substring(1, chunks[5].trim().length() - 1);
+			
+			chunks = new String(request.getData()).split("\"");
+			message = chunks[1].trim().substring(0, chunks[1].trim().length());
 			
 			System.out.println(nicknameReceived + ": " + message);
 		}

@@ -11,6 +11,7 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 
 public class Multicast {
 	
@@ -36,9 +37,11 @@ public class Multicast {
 			public void run() {
 				try {
 					serverMulticast();
-				} catch (IOException e) {
+				} catch (IOException | InterruptedException e) {
+					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+
 			}
 		};
 		Thread serverThread = new Thread(serverRun);
@@ -47,11 +50,11 @@ public class Multicast {
 	
 	private void clientMulticast(String message) throws IOException {
 		byte[] msgByte = message.getBytes();
-		DatagramPacket msgDataOut = new DatagramPacket(msgByte,  message.length(), this.group, this.port);
+		DatagramPacket msgDataOut = new DatagramPacket(msgByte,  msgByte.length, this.group, this.port);
 		mSocket.send(msgDataOut);
 	}
 	
-	private void serverMulticast() throws IOException {
+	private void serverMulticast() throws IOException, InterruptedException {
 		String command = new String();
 		String nickname = new String();
 		String msg = new String();
@@ -70,12 +73,13 @@ public class Multicast {
 				System.out.println(nickname + ": " + msg);
 			} else if(command.equals("--JOIN")) {
 				if(!onlineMap.containsKey(nickname)) {
-					System.out.println(nickname + " está conectado!");
 					sendMessage("--JOINACK [" + this.nickname + "]");
 				}
 			} else if(command.equals("--JOINACK")) {
-				if(!onlineMap.containsKey(nickname))
+				if(!onlineMap.containsKey(nickname)) {
+					System.out.println(nickname + " está conectado!");
 					onlineMap.put(nickname, msgDataIn.getAddress().getHostAddress());
+				}
 			} else if(command.equals("--LEAVE")) {
 				System.out.println(nickname + " saiu do grupo!");
 				onlineMap.remove(nickname);
