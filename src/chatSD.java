@@ -1,5 +1,14 @@
+/*
+ * Sistemas Distribuídos
+ * Profº. Rodrigo Campiolo
+ * Emerson Yudi Nakashima 1451600
+ * Gustavo Correia Gonzalez 1551787
+ * Implementação de serviço de chat
+ */
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Scanner;
+import java.util.Set;
 
 public class chatSD {
 
@@ -13,14 +22,16 @@ public class chatSD {
 		
 		scanner = new Scanner(System.in);
 		
-		System.out.print("Choose your nickname: ");
+		System.out.print("Insira seu apelido: ");
 		nickname = new String(scanner.nextLine()).trim();
 		
 		multicastChat = new Multicast(nickname);		
 		multicastChat.sendMessage("--JOIN [" + nickname + "]");
 		
 		udpChat = new UDPSocket();
+		System.out.println("Executando servidor UDP");
 		new TCPServer();
+		System.out.println("Executando servidor TCP");
 		
 		message = new String();
 		String nicknameSend = new String();
@@ -51,7 +62,7 @@ public class chatSD {
 				} else
 					System.out.println("É necessário que o apelido esteja entre colchetes!");
 				
-			} else if(message.contains("--LISTFILES")) {
+			} else if(message.contains("--LISTFILES") || message.contains("--DOWNFILE")) {
 				nicknameSend = message.split(" ")[1].trim();
 				if(verifyNickname(nicknameSend)) {
 					if(multicastChat.getOnlineMap().containsKey(nicknameSend.substring(1, nicknameSend.length() - 1))) {
@@ -62,17 +73,21 @@ public class chatSD {
 				} else
 					System.out.println("É necessário que o apelido esteja entre colchetes!");
 				
-			} else if(message.contains("--DOWNFILE")) {
-				System.out.println("--DOWNFILE");
-				
 			} else if(message.contains("--LEAVE")) {
 				multicastChat.sendMessage("--LEAVE" + " [" + this.nickname + "]");
+				
+			} else if(message.contains("--LIST")) {
+				HashMap<String, String> onlineMap = multicastChat.getOnlineMap();
+				
+				System.out.println("Os seguintes usuários estão online:");
+				Set<String> keys = onlineMap.keySet();
+				for(String key: keys)
+	        		System.out.println(key);
 				
 			} else {
 				printHelp();
 			}
 		}
-		System.out.println("Conexão finalizada");
 	}
 	
 	private void printHelp() {
@@ -80,9 +95,7 @@ public class chatSD {
 		System.out.println("--MSG [apelido] \"texto\" \t\t Mensagem enviada a todos os membros do grupo pelo IP 225.1.2.3 e porta 6789");
 		System.out.println("--MSGIDV FROM [apelido] TO [apelido] \"texto\" \t\t Mensagem enviada a um membro do grupo para ser recebida na porta 6799");
 		System.out.println("--LISTFILES [apelido] \t\t Solicitação de listagem de arquivos para um usuário");
-		System.out.println("--FILES [arq1, arq2, arqN] \t\t Resposta para o LISTFILES");
 		System.out.println("--DOWNFILE [apelido] filename \t\t Solicita arquivo do servidor.");
-		System.out.println("--DOWNINFO [filename, size, IP, PORTA] \t\t Resposta com informações sobre o arquivo e conexão TCP.");
 		System.out.println("--LEAVE [apelido] \t\t Deixa o grupo de conversação");
 		System.out.println("Os colchetes e aspas dulpas são obrigatórios");
 	}

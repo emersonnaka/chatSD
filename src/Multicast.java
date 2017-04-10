@@ -2,6 +2,7 @@
  * Sistemas Distribuídos
  * Profº. Rodrigo Campiolo
  * Emerson Yudi Nakashima 1451600
+ * Gustavo Correia Gonzalez 1551787
  * Multicast
  * Descrição: chat em grupo
  */
@@ -9,9 +10,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.concurrent.TimeUnit;
 
 public class Multicast {
 	
@@ -68,7 +67,7 @@ public class Multicast {
 			nickname = msg.split(" ")[1].trim();
 			nickname = nickname.substring(1, nickname.length() - 1);
 			
-			if(command.equalsIgnoreCase("--MSG")) {
+			if(command.equals("--MSG")) {
 				msg = msg.substring(msg.indexOf("\"") + 1, msg.length() - 1);
 				System.out.println(nickname + ": " + msg);
 			} else if(command.equals("--JOIN")) {
@@ -77,7 +76,7 @@ public class Multicast {
 				}
 			} else if(command.equals("--JOINACK")) {
 				if(!onlineMap.containsKey(nickname)) {
-					System.out.println(nickname + " está conectado!");
+					System.out.println(nickname + " entrou no grupo!");
 					onlineMap.put(nickname, msgDataIn.getAddress().getHostAddress());
 				}
 			} else if(command.equals("--LEAVE")) {
@@ -86,8 +85,6 @@ public class Multicast {
 				mSocket.leaveGroup(group);
 				System.exit(0);
 			}
-			
-			System.out.println(Arrays.asList(onlineMap));
 		}
 	}
 	

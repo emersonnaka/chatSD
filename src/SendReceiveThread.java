@@ -2,16 +2,20 @@
  * Sistemas Distribuídos
  * Profº. Rodrigo Campiolo
  * Emerson Yudi Nakashima 1451600
- * SendReceiveThread: receber e enviar mensagens
- * Descrição: uma thread para cada operação, receber e enviar
+ * Gustavo Correia Gonzalez 1551787
+ * SendReceiveThread: receber e enviar mensagens via protocolo TCP
  */
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
-import java.util.Scanner;
-
 
 public class SendReceiveThread {
 	
@@ -49,7 +53,7 @@ public class SendReceiveThread {
 		
 		if(receivedMsg.contains("--LISTFILES")) {
 			String homePath = System.getProperty("user.home");
-			String pathShared = homePath + "/Imagens";
+			String pathShared = homePath + "/Downloads";
 			
 			File filesShared = new File(pathShared);
 
@@ -64,12 +68,83 @@ public class SendReceiveThread {
 			sendThread(files);
 		} else if(receivedMsg.contains("--FILES")) {
 			System.out.println(receivedMsg);
+			
+		} else if(receivedMsg.contains("--DOWNFILE")) {
+			String homePath = System.getProperty("user.home");
+			String pathShared = homePath + "/Downloads";
+			String fileName = receivedMsg.split(" ")[2].trim();
+			
+			pathShared = pathShared + "/" + fileName;
+			System.out.println("Filename: " + pathShared);
+
+			sendFile(pathShared);
+	        
+		} else if(receivedMsg.contains("--DOWNINFO")) {
+
+			String propertyFile = receivedMsg.split(" ")[1].trim();
+			String fileName = propertyFile.substring(1, propertyFile.length() - 1);
+			String homePath = System.getProperty("user.home");
+			fileName = homePath + "/Downloads/" + fileName;
+			
+			byte[] contents = new byte[10000];
+			FileOutputStream fileOutput = new FileOutputStream(fileName);
+			BufferedOutputStream bufferOutput = new BufferedOutputStream(fileOutput);
+			InputStream inputStream = sendReceiveSocket.getInputStream();
+			
+			int bytesRead = 0;
+			while((bytesRead = inputStream.read(contents)) != -1) {
+				bufferOutput.write(contents, 0, bytesRead);
+			}
+			bufferOutput.flush();
+			bufferOutput.close();
+			System.out.println("Arquivo recebido com sucesso: " + fileName);
+		}
+	}
+	
+	private void sendFile(String fileName) throws IOException {
+		File fileShared = new File(fileName);
+		
+		if(fileShared.exists() && !fileShared.isDirectory()) {
+			FileInputStream fileInput = new FileInputStream(fileShared);
+			BufferedInputStream bufferInput = new BufferedInputStream(fileInput);
+			
+			String reply = "--DOWNINFO [" + fileShared.getName() + ", " 
+					+ fileShared.length() + ", "
+					+ sendReceiveSocket.getLocalAddress().toString()
+					+ ", " + sendReceiveSocket.getLocalPort() + "]";
+			
+			sendThread(reply);
+			
+			OutputStream outStream = this.sendReceiveSocket.getOutputStream();
+			
+			byte[] contents;
+			long fileLength = fileShared.length(); 
+	        long current = 0;
+	        
+	        while(current != fileLength) {
+	        	int size = 10000;
+	        	
+	        	if((fileLength - current) >= size)
+	                current += size;    
+	            else{ 
+	                size = (int) (fileLength - current); 
+	                current = fileLength;
+	            } 
+	        	
+	        	contents = new byte[size];
+	        	bufferInput.read(contents, 0, size);
+	        	outStream.write(contents);
+	        	System.out.println("Carregando arquivo: " + (current * 100) / fileLength + "%");
+	        }
+			outStream.flush();
+			
+			bufferInput.close();
+	        outStream.close();
+	        System.out.println("Arquivo enviado");
 		}
 	}
 	
 	private void sendThread(String message) throws IOException {
-		System.out.println(message);
 		out.writeUTF(message);
-		System.out.println("enviado");
 	}
 }

@@ -2,7 +2,8 @@
  * Sistemas Distribuídos
  * Profº. Rodrigo Campiolo
  * Emerson Yudi Nakashima 1451600
- * Implementação do socket UDP P2P
+ * Gustavo Correia Gonzalez 1551787
+ * Implementação do socket UDP
  */
 import java.io.IOException;
 import java.net.DatagramPacket;
