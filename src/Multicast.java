@@ -15,21 +15,23 @@ import java.util.HashMap;
 public class Multicast {
 	
 	private final MulticastSocket mSocket;
-	private final String nickname;
 	private final String host;
 	private final int port;
 	private final InetAddress group;
-	private HashMap<String, String> onlineMap;	
+	private HashMap<String, String> onlineMap;
+	private boolean isJoin;
+	private String nickJoin;
+	private String hostJoin;
 
-	public Multicast(String nickname) throws IOException, InterruptedException {
+	public Multicast() throws IOException, InterruptedException {
 		
-		this.nickname = nickname;
 		this.host = "225.1.2.3";
 		this.port = 6789;
 		this.group = InetAddress.getByName(this.host);
 		mSocket = new MulticastSocket(this.port);
 		mSocket.joinGroup(this.group);
 		this.onlineMap = new HashMap<>();
+		this.isJoin = false;
 		
 		Runnable serverRun = new Runnable() {
 			@Override
@@ -67,23 +69,18 @@ public class Multicast {
 			nickname = msg.split(" ")[1].trim();
 			nickname = nickname.substring(1, nickname.length() - 1);
 			
-			if(command.equals("--MSG")) {
+			if(command.equals("MSG")) {
 				msg = msg.substring(msg.indexOf("\"") + 1, msg.length() - 1);
 				System.out.println(nickname + ": " + msg);
-			} else if(command.equals("--JOIN")) {
-				if(!onlineMap.containsKey(nickname)) {
-					sendMessage("--JOINACK [" + this.nickname + "]");
-				}
-			} else if(command.equals("--JOINACK")) {
-				if(!onlineMap.containsKey(nickname)) {
-					System.out.println(nickname + " entrou no grupo!");
-					onlineMap.put(nickname, msgDataIn.getAddress().getHostAddress());
-				}
-			} else if(command.equals("--LEAVE")) {
+			} else if(command.equals("LEAVE")) {
 				System.out.println(nickname + " saiu do grupo!");
 				onlineMap.remove(nickname);
 				mSocket.leaveGroup(group);
 				System.exit(0);
+			} else if(command.equals("JOIN")) {
+				this.nickJoin = new String(nickname);
+				this.hostJoin = new String(msgDataIn.getAddress().getHostAddress());
+				this.isJoin = true;
 			}
 		}
 	}
@@ -94,6 +91,26 @@ public class Multicast {
 
 	public HashMap<String, String> getOnlineMap() {
 		return onlineMap;
+	}
+
+	public MulticastSocket getmSocket() {
+		return mSocket;
+	}
+
+	public boolean isJoin() {
+		return isJoin;
+	}
+
+	public void setJoin(boolean isJoin) {
+		this.isJoin = isJoin;
+	}
+
+	public String getNickJoin() {
+		return nickJoin;
+	}
+
+	public String getHostJoin() {
+		return hostJoin;
 	}
 	
 }

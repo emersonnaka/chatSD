@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public class chatSD {
 
@@ -24,22 +25,55 @@ public class chatSD {
 		
 		System.out.print("Insira seu apelido: ");
 		nickname = new String(scanner.nextLine()).trim();
-		
-		multicastChat = new Multicast(nickname);		
-		multicastChat.sendMessage("--JOIN [" + nickname + "]");
-		
+
 		udpChat = new UDPSocket();
 		System.out.println("Executando servidor UDP");
 		new TCPServer();
 		System.out.println("Executando servidor TCP");
 		
+		multicastChat = new Multicast();		
+		multicastChat.sendMessage("JOIN [" + nickname + "]");
+
+		
 		message = new String();
 		String nicknameSend = new String();
 		
-		while(!message.contains("--LEAVE")) {
+		Runnable joinRun = new Runnable() {
+			@Override
+			public void run() {
+				try {
+					verifyJoin();
+				} catch (IOException e) {
+					e.printStackTrace();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		};
+		Thread verifyThread = new Thread(joinRun);
+		verifyThread.start();
+		
+		Runnable joinAckRun = new Runnable() {
+			@Override
+			public void run() {
+				try {
+					verifyJoinAck();
+				} catch (IOException e) {
+					e.printStackTrace();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		};
+		Thread verifyAckThread = new Thread(joinAckRun);
+		verifyAckThread.start();
+		
+		while(!message.contains("LEAVE")) {
 			message = scanner.nextLine();
 			
-			if(message.contains("--MSGDIV FROM")) {
+			if(message.contains("MSGDIV FROM")) {
 				nicknameSend = message.split(" ")[2].trim();
 				String nicknameSendTo = message.split(" ")[4].trim();
 				
@@ -52,7 +86,7 @@ public class chatSD {
 				} else
 					System.out.println("É necessário que o apelido esteja entre colchetes!");
 				
-			} else if(message.contains("--MSG")) {
+			} else if(message.contains("MSG")) {
 				nicknameSend = message.split(" ")[1].trim();
 				if(verifyNickname(nicknameSend)) {
 					if(verifyDoubleQuotes(message))
@@ -62,7 +96,7 @@ public class chatSD {
 				} else
 					System.out.println("É necessário que o apelido esteja entre colchetes!");
 				
-			} else if(message.contains("--LISTFILES") || message.contains("--DOWNFILE")) {
+			} else if(message.contains("LISTFILES") || message.contains("DOWNFILE")) {
 				nicknameSend = message.split(" ")[1].trim();
 				if(verifyNickname(nicknameSend)) {
 					if(multicastChat.getOnlineMap().containsKey(nicknameSend.substring(1, nicknameSend.length() - 1))) {
@@ -73,10 +107,10 @@ public class chatSD {
 				} else
 					System.out.println("É necessário que o apelido esteja entre colchetes!");
 				
-			} else if(message.contains("--LEAVE")) {
-				multicastChat.sendMessage("--LEAVE" + " [" + this.nickname + "]");
+			} else if(message.contains("LEAVE")) {
+				multicastChat.sendMessage("LEAVE" + " [" + this.nickname + "]");
 				
-			} else if(message.contains("--LIST")) {
+			} else if(message.contains("LIST")) {
 				HashMap<String, String> onlineMap = multicastChat.getOnlineMap();
 				
 				System.out.println("Os seguintes usuários estão online:");
@@ -92,11 +126,11 @@ public class chatSD {
 	
 	private void printHelp() {
 		System.out.println("Commands:");
-		System.out.println("--MSG [apelido] \"texto\" \t\t Mensagem enviada a todos os membros do grupo pelo IP 225.1.2.3 e porta 6789");
-		System.out.println("--MSGIDV FROM [apelido] TO [apelido] \"texto\" \t\t Mensagem enviada a um membro do grupo para ser recebida na porta 6799");
-		System.out.println("--LISTFILES [apelido] \t\t Solicitação de listagem de arquivos para um usuário");
-		System.out.println("--DOWNFILE [apelido] filename \t\t Solicita arquivo do servidor.");
-		System.out.println("--LEAVE [apelido] \t\t Deixa o grupo de conversação");
+		System.out.println("MSG [apelido] \"texto\" \t\t Mensagem enviada a todos os membros do grupo pelo IP 225.1.2.3 e porta 6789");
+		System.out.println("MSGIDV FROM [apelido] TO [apelido] \"texto\" \t\t Mensagem enviada a um membro do grupo para ser recebida na porta 6799");
+		System.out.println("LISTFILES [apelido] \t\t Solicitação de listagem de arquivos para um usuário");
+		System.out.println("DOWNFILE [apelido] filename \t\t Solicita arquivo do servidor.");
+		System.out.println("LEAVE [apelido] \t\t Deixa o grupo de conversação");
 		System.out.println("Os colchetes e aspas dulpas são obrigatórios");
 	}
 	
@@ -121,6 +155,42 @@ public class chatSD {
 				return true;
 		}
 		return false;
+	}
+	
+	private void verifyJoin() throws IOException, InterruptedException {
+		String nickname, host;
+		System.out.println("VerifyJoin rodando");
+		while(true) {
+			if(multicastChat.isJoin()) {
+				nickname = new String(multicastChat.getNickJoin());
+				host = new String(multicastChat.getHostJoin());
+				
+				if(!multicastChat.getOnlineMap().containsKey(nickname)) {
+					multicastChat.getOnlineMap().put(nickname, host);
+					udpChat.sendMessage(host, "JOINACK [" + this.nickname + "]");
+				}
+
+				multicastChat.setJoin(false);
+			}
+			TimeUnit.SECONDS.sleep(1);
+		}
+	}
+	
+	private void verifyJoinAck() throws IOException, InterruptedException {
+		String nickname = new String();
+		String host = new String();
+		
+		while(true) {
+			if(udpChat.isJoinAck()) {
+				nickname = udpChat.getNickJoinAck();
+				if(!multicastChat.getOnlineMap().containsKey(nickname)) {
+					host = udpChat.getHostjoinAck();
+					multicastChat.getOnlineMap().put(nickname, host);
+				}
+				udpChat.setJoinAck(false);
+			}
+			TimeUnit.SECONDS.sleep(1);
+		}
 	}
 	
 }

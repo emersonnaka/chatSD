@@ -51,14 +51,14 @@ public class SendReceiveThread {
 	private void receive() throws IOException {
 		receivedMsg = in.readUTF();
 		
-		if(receivedMsg.contains("--LISTFILES")) {
+		if(receivedMsg.contains("LISTFILES")) {
 			String homePath = System.getProperty("user.home");
 			String pathShared = homePath + "/Downloads";
 			
 			File filesShared = new File(pathShared);
 
 			String files = new String();
-			files = "--FILES [";
+			files = "FILES [";
 			
 			for(File file : filesShared.listFiles()) {
 				files = files + file.getName() + ", ";
@@ -66,10 +66,10 @@ public class SendReceiveThread {
 			files = files.substring(0, files.length() - 2) + "]";
 			
 			sendThread(files);
-		} else if(receivedMsg.contains("--FILES")) {
+		} else if(receivedMsg.contains("FILES")) {
 			System.out.println(receivedMsg);
 			
-		} else if(receivedMsg.contains("--DOWNFILE")) {
+		} else if(receivedMsg.contains("DOWNFILE")) {
 			String homePath = System.getProperty("user.home");
 			String pathShared = homePath + "/Downloads";
 			String fileName = receivedMsg.split(" ")[2].trim();
@@ -79,7 +79,7 @@ public class SendReceiveThread {
 
 			sendFile(pathShared);
 	        
-		} else if(receivedMsg.contains("--DOWNINFO")) {
+		} else if(receivedMsg.contains("DOWNINFO")) {
 
 			String propertyFile = receivedMsg.split(" ")[1].trim();
 			String fileName = propertyFile.substring(1, propertyFile.length() - 1);
@@ -108,7 +108,7 @@ public class SendReceiveThread {
 			FileInputStream fileInput = new FileInputStream(fileShared);
 			BufferedInputStream bufferInput = new BufferedInputStream(fileInput);
 			
-			String reply = "--DOWNINFO [" + fileShared.getName() + ", " 
+			String reply = "DOWNINFO [" + fileShared.getName() + ", " 
 					+ fileShared.length() + ", "
 					+ sendReceiveSocket.getLocalAddress().toString()
 					+ ", " + sendReceiveSocket.getLocalPort() + "]";
