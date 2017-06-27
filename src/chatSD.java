@@ -15,6 +15,7 @@ public class chatSD {
 
 	private String nickname;
 	private String message;
+	private HashMap<String, String> onlineMap;
 	private final Scanner scanner;
 	private final Multicast multicastChat;
 	private final UDPSocket udpChat;
@@ -31,44 +32,13 @@ public class chatSD {
 		new TCPServer();
 		System.out.println("Executando servidor TCP");
 		
-		multicastChat = new Multicast();		
+		multicastChat = new Multicast(udpChat, nickname);		
 		multicastChat.sendMessage("JOIN [" + nickname + "]");
+		onlineMap = multicastChat.getOnlineMap();
+		udpChat.setOnlineMap(onlineMap);
 
-		
 		message = new String();
 		String nicknameSend = new String();
-		
-		Runnable joinRun = new Runnable() {
-			@Override
-			public void run() {
-				try {
-					verifyJoin();
-				} catch (IOException e) {
-					e.printStackTrace();
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		};
-		Thread verifyThread = new Thread(joinRun);
-		verifyThread.start();
-		
-		Runnable joinAckRun = new Runnable() {
-			@Override
-			public void run() {
-				try {
-					verifyJoinAck();
-				} catch (IOException e) {
-					e.printStackTrace();
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		};
-		Thread verifyAckThread = new Thread(joinAckRun);
-		verifyAckThread.start();
 		
 		while(!message.contains("LEAVE")) {
 			message = scanner.nextLine();
@@ -78,8 +48,8 @@ public class chatSD {
 				String nicknameSendTo = message.split(" ")[4].trim();
 				
 				if(verifyNickname(nicknameSend) && verifyNickname(nicknameSendTo)) {
-					if(multicastChat.getOnlineMap().containsKey(nicknameSendTo.substring(1, nicknameSendTo.length() - 1))) {
-						String host = (String) multicastChat.getOnlineMap().get(nicknameSendTo.substring(1, nicknameSendTo.length() - 1));
+					if(this.onlineMap.containsKey(nicknameSendTo.substring(1, nicknameSendTo.length() - 1))) {
+						String host = (String) this.onlineMap.get(nicknameSendTo.substring(1, nicknameSendTo.length() - 1));
 						udpChat.sendMessage(host, message);
 					} else
 						System.out.println("O usuário " + nicknameSendTo + " não está conectado no grupo!");
@@ -99,8 +69,8 @@ public class chatSD {
 			} else if(message.contains("LISTFILES") || message.contains("DOWNFILE")) {
 				nicknameSend = message.split(" ")[1].trim();
 				if(verifyNickname(nicknameSend)) {
-					if(multicastChat.getOnlineMap().containsKey(nicknameSend.substring(1, nicknameSend.length() - 1))) {
-						String host = (String) multicastChat.getOnlineMap().get(nicknameSend.substring(1, nicknameSend.length() - 1));
+					if(this.onlineMap.containsKey(nicknameSend.substring(1, nicknameSend.length() - 1))) {
+						String host = (String) this.onlineMap.get(nicknameSend.substring(1, nicknameSend.length() - 1));
 						new TCPClient(host, message);
 					} else
 						System.out.println("O usuário " + nicknameSend + " não está conectado no grupo!");
@@ -111,7 +81,7 @@ public class chatSD {
 				multicastChat.sendMessage("LEAVE" + " [" + this.nickname + "]");
 				
 			} else if(message.contains("LIST")) {
-				HashMap<String, String> onlineMap = multicastChat.getOnlineMap();
+				HashMap<String, String> onlineMap = this.onlineMap;
 				
 				System.out.println("Os seguintes usuários estão online:");
 				Set<String> keys = onlineMap.keySet();
@@ -155,42 +125,6 @@ public class chatSD {
 				return true;
 		}
 		return false;
-	}
-	
-	private void verifyJoin() throws IOException, InterruptedException {
-		String nickname, host;
-		System.out.println("VerifyJoin rodando");
-		while(true) {
-			if(multicastChat.isJoin()) {
-				nickname = new String(multicastChat.getNickJoin());
-				host = new String(multicastChat.getHostJoin());
-				
-				if(!multicastChat.getOnlineMap().containsKey(nickname)) {
-					multicastChat.getOnlineMap().put(nickname, host);
-					udpChat.sendMessage(host, "JOINACK [" + this.nickname + "]");
-				}
-
-				multicastChat.setJoin(false);
-			}
-			TimeUnit.SECONDS.sleep(1);
-		}
-	}
-	
-	private void verifyJoinAck() throws IOException, InterruptedException {
-		String nickname = new String();
-		String host = new String();
-		
-		while(true) {
-			if(udpChat.isJoinAck()) {
-				nickname = udpChat.getNickJoinAck();
-				if(!multicastChat.getOnlineMap().containsKey(nickname)) {
-					host = udpChat.getHostjoinAck();
-					multicastChat.getOnlineMap().put(nickname, host);
-				}
-				udpChat.setJoinAck(false);
-			}
-			TimeUnit.SECONDS.sleep(1);
-		}
 	}
 	
 }

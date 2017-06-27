@@ -9,19 +9,17 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.util.HashMap;
 
 public class UDPSocket {
 	
 	private final int serverPort;
 	private DatagramSocket serverSocket;
-	private boolean isJoinAck;
-	private String nickJoinAck;
-	private String hostjoinAck;
+	private HashMap<String, String> onlineMap;
 	
 	public UDPSocket() throws InterruptedException {
 		
-		this.serverPort = 6799;
-		this.isJoinAck = false;
+		this.serverPort = 6790;
 		
 		Runnable serverRunnable = new Runnable() {
 			public void run() {
@@ -65,7 +63,7 @@ public class UDPSocket {
 			DatagramPacket request = new DatagramPacket(buffer, buffer.length);
 			serverSocket.receive(request);
 			
-			String[] chunks = new String(request.getData()).split(" ");
+			String[] chunks = new String(request.getData(), 0, request.getLength()).split(" ");
 			command = chunks[0].trim();
 			if(!command.equals("JOINACK")) {			
 				nicknameReceived = chunks[2].trim().substring(1, chunks[2].trim().length() - 1);
@@ -75,9 +73,8 @@ public class UDPSocket {
 						
 				System.out.println(nicknameReceived + ": " + message);
 			} else {				
-				this.nickJoinAck = new String(chunks[1].trim()).substring(1, chunks[1].trim().length() - 1);
-				this.hostjoinAck = new String(request.getAddress().getHostAddress());
-				this.isJoinAck = true;
+				nicknameReceived = new String(chunks[1].trim()).substring(1, chunks[1].trim().length() - 1);
+				onlineMap.put(nicknameReceived, request.getAddress().getHostAddress());
 			}
 		}
 	}
@@ -86,24 +83,8 @@ public class UDPSocket {
 		UDPClient(host, message);
 	}
 
-	public DatagramSocket getServerSocket() {
-		return serverSocket;
-	}
-
-	public boolean isJoinAck() {
-		return isJoinAck;
-	}
-
-	public String getNickJoinAck() {
-		return nickJoinAck;
-	}
-
-	public String getHostjoinAck() {
-		return hostjoinAck;
-	}
-
-	public void setJoinAck(boolean isJoinAck) {
-		this.isJoinAck = isJoinAck;
+	public void setOnlineMap(HashMap<String, String> onlineMap) {
+		this.onlineMap = onlineMap;
 	}
 
 }

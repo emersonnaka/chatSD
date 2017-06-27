@@ -15,23 +15,23 @@ import java.util.HashMap;
 public class Multicast {
 	
 	private final MulticastSocket mSocket;
+	private final String nickname;
 	private final String host;
 	private final int port;
 	private final InetAddress group;
 	private HashMap<String, String> onlineMap;
-	private boolean isJoin;
-	private String nickJoin;
-	private String hostJoin;
+	private UDPSocket udpChat;
 
-	public Multicast() throws IOException, InterruptedException {
+	public Multicast(UDPSocket udpChat, String nickname) throws IOException, InterruptedException {
 		
+		this.nickname = nickname;
 		this.host = "225.1.2.3";
-		this.port = 6789;
+		this.port = 6788;
 		this.group = InetAddress.getByName(this.host);
 		mSocket = new MulticastSocket(this.port);
 		mSocket.joinGroup(this.group);
 		this.onlineMap = new HashMap<>();
-		this.isJoin = false;
+		this.udpChat = udpChat;
 		
 		Runnable serverRun = new Runnable() {
 			@Override
@@ -59,12 +59,13 @@ public class Multicast {
 		String command = new String();
 		String nickname = new String();
 		String msg = new String();
+		String host = new String();
 		
 		while(true) {
 			byte[] msgByte = new byte[1000];
 			DatagramPacket msgDataIn = new DatagramPacket(msgByte, msgByte.length);
 			mSocket.receive(msgDataIn);
-			msg = new String(msgDataIn.getData()).trim();
+			msg = new String(msgDataIn.getData(), 0, msgDataIn.getLength());
 			command = msg.split(" ")[0].trim();
 			nickname = msg.split(" ")[1].trim();
 			nickname = nickname.substring(1, nickname.length() - 1);
@@ -78,9 +79,9 @@ public class Multicast {
 				mSocket.leaveGroup(group);
 				System.exit(0);
 			} else if(command.equals("JOIN")) {
-				this.nickJoin = new String(nickname);
-				this.hostJoin = new String(msgDataIn.getAddress().getHostAddress());
-				this.isJoin = true;
+				host = msgDataIn.getAddress().getHostAddress();
+				onlineMap.put(nickname, host);
+				udpChat.sendMessage(host, "JOINACK [" + this.nickname + "]");
 			}
 		}
 	}
@@ -97,20 +98,4 @@ public class Multicast {
 		return mSocket;
 	}
 
-	public boolean isJoin() {
-		return isJoin;
-	}
-
-	public void setJoin(boolean isJoin) {
-		this.isJoin = isJoin;
-	}
-
-	public String getNickJoin() {
-		return nickJoin;
-	}
-
-	public String getHostJoin() {
-		return hostJoin;
-	}
-	
 }
