@@ -47,7 +47,7 @@ public class UDPSocket {
 		DatagramPacket request = new DatagramPacket(mClient, mClient.length, aHost, this.serverPort);
 		
 		clientSocket.send(request);
-		
+		System.out.println("JoinACK enviado");
         clientSocket.close();
 	}
 	
@@ -65,6 +65,7 @@ public class UDPSocket {
 			
 			String[] chunks = new String(request.getData(), 0, request.getLength()).split(" ");
 			command = chunks[0].trim();
+			System.out.println(command);
 			if(!command.equals("JOINACK")) {			
 				nicknameReceived = chunks[2].trim().substring(1, chunks[2].trim().length() - 1);
 				
@@ -72,8 +73,9 @@ public class UDPSocket {
 				message = chunks[1].trim().substring(0, chunks[1].trim().length());
 						
 				System.out.println(nicknameReceived + ": " + message);
-			} else {				
+			} else {
 				nicknameReceived = new String(chunks[1].trim()).substring(1, chunks[1].trim().length() - 1);
+				System.out.println(nicknameReceived);
 				onlineMap.put(nicknameReceived, request.getAddress().getHostAddress());
 			}
 		}

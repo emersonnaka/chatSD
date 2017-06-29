@@ -26,7 +26,7 @@ public class Multicast {
 		
 		this.nickname = nickname;
 		this.host = "225.1.2.3";
-		this.port = 6788;
+		this.port = 6789;
 		this.group = InetAddress.getByName(this.host);
 		mSocket = new MulticastSocket(this.port);
 		mSocket.joinGroup(this.group);
@@ -77,7 +77,6 @@ public class Multicast {
 				System.out.println(nickname + " saiu do grupo!");
 				onlineMap.remove(nickname);
 				mSocket.leaveGroup(group);
-				System.exit(0);
 			} else if(command.equals("JOIN")) {
 				host = msgDataIn.getAddress().getHostAddress();
 				onlineMap.put(nickname, host);

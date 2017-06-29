@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 public class chatSD {
 
@@ -79,7 +78,7 @@ public class chatSD {
 				
 			} else if(message.contains("LEAVE")) {
 				multicastChat.sendMessage("LEAVE" + " [" + this.nickname + "]");
-				
+				System.exit(0);
 			} else if(message.contains("LIST")) {
 				HashMap<String, String> onlineMap = this.onlineMap;
 				
